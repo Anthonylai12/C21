@@ -58,32 +58,27 @@
       ansible.builtin.service:
         name: rsyslog
         state: restarted
+        
+    - name: Stop and disable firewalld if present
+      ansible.builtin.service:
+        name: firewalld
+        enabled: no
+        state: stopped
+      when: "'firewalld.service' in ansible_facts.services"
 
-    - name: Disable host firewalls (ufw and firewalld)
-      ansible.builtin.block:
-        - name: Gather service facts
-          ansible.builtin.service_facts:
+    - name: Stop and disable ufw if present
+      ansible.builtin.service:
+        name: ufw
+        enabled: no
+        state: stopped
+      when: "'ufw.service' in ansible_facts.services"
 
-        - name: Stop and disable firewalld if present
-          ansible.builtin.service:
-            name: firewalld
-            enabled: no
-            state: stopped
-          when: "'firewalld.service' in ansible_facts.services"
-
-        - name: Stop and disable ufw if present
-          ansible.builtin.service:
-            name: ufw
-            enabled: no
-            state: stopped
-          when: "'ufw.service' in ansible_facts.services"
-
-        - name: Ensure ufw is disabled
-          ansible.builtin.command: ufw disable
-          when: "'ufw.service' in ansible_facts.services"
-          register: ufw_disable_cmd
-          changed_when: "'disabled' in (ufw_disable_cmd.stdout | lower) or 'inactive' in (ufw_disable_cmd.stdout | lower)"
-          failed_when: false
+    - name: Ensure ufw is disabled
+      ansible.builtin.command: ufw disable
+      when: "'ufw.service' in ansible_facts.services"
+      register: ufw_disable_cmd
+      changed_when: "'disabled' in (ufw_disable_cmd.stdout | lower) or 'inactive' in (ufw_disable_cmd.stdout | lower)"
+      failed_when: false
 
     - name: Configure keepalived
       ansible.builtin.copy:
