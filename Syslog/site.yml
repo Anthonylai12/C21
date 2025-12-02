@@ -11,11 +11,10 @@
         name: "{{ hostname_map[inventory_hostname] | default(inventory_hostname) }}"
 
   tasks:
-    - name: Install rsyslog and keepalived
+    - name: Install rsyslog
       ansible.builtin.package:
         name:
           - rsyslog
-          - keepalived
         state: present
 
     - name: Ensure rsyslog enabled and started
@@ -68,41 +67,5 @@
 
     
     
-    - name: Configure keepalived
-      ansible.builtin.copy:
-        dest: /etc/keepalived/keepalived.conf
-        owner: root
-        group: root
-        mode: '0644'
-        content: |
-          vrrp_script chk_rsyslog {
-              script "/usr/bin/pgrep rsyslogd"
-              interval 2
-              timeout 2
-              fall 2
-              rise 2
-          }
-
-          vrrp_instance VI_1 {
-              state BACKUP
-              interface {{ vip_interface }}
-              virtual_router_id 51
-              priority {{ 200 if inventory_hostname == '192.168.10.201' else 100 }}
-              advert_int 1
-              authentication {
-                  auth_type PASS
-                  auth_pass 42Secret!
-              }
-              virtual_ipaddress {
-                  {{ vip_address }}/24 dev {{ vip_interface }}
-              }
-              track_script {
-                  chk_rsyslog
-              }
-          }
-
-    - name: Ensure keepalived enabled and restarted
-      ansible.builtin.service:
-        name: keepalived
-        state: restarted
-        enabled: yes
+    
+    
